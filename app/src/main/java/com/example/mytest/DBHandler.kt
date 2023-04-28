@@ -1,5 +1,6 @@
 package com.example.mytest
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
@@ -129,10 +130,8 @@ class DatabaseHandler(context: Context): SQLiteOpenHelper(context,DATABASE_NAME,
         return success
     }
 
-    //method to read data
-    fun viewEmployee():List<EmpModelClass>{
-        val empList:ArrayList<EmpModelClass> = ArrayList<EmpModelClass>()
-        val selectQuery = "SELECT * FROM $TABLE_CONTACTS"
+    fun findUserById(userId: Int):List<User>{
+        val selectQuery = "SELECT * FROM UserTable WHERE userId=$userId"
         val db = this.readableDatabase
         var cursor: Cursor? = null
         try{
@@ -141,20 +140,185 @@ class DatabaseHandler(context: Context): SQLiteOpenHelper(context,DATABASE_NAME,
             db.execSQL(selectQuery)
             return ArrayList()
         }
+        db.close()
+        return loadUser(cursor)
+    }
+
+    fun findUserByVocation(vocation: Int):List<User>{
+        val selectQuery = "SELECT * FROM UserTable WHERE vocation=$vocation"
+        val db = this.readableDatabase
+        var cursor: Cursor? = null
+        try{
+            cursor = db.rawQuery(selectQuery, null)
+        }catch (e: SQLiteException) {
+            db.execSQL(selectQuery)
+            return ArrayList()
+        }
+        db.close()
+        return loadUser(cursor)
+    }
+
+    fun findUserByEmail(email: String):List<User>{
+        val selectQuery = "SELECT * FROM UserTable WHERE userEmail=$email"
+        val db = this.readableDatabase
+        var cursor: Cursor? = null
+        try{
+            cursor = db.rawQuery(selectQuery, null)
+        }catch (e: SQLiteException) {
+            db.execSQL(selectQuery)
+            return ArrayList()
+        }
+        db.close()
+        return loadUser(cursor)
+    }
+
+    fun findUserByCourse(courseId: String):List<User>{
+        val selectQuery = "SELECT * FROM UserTable WHERE userCourse LIKE %$courseId%"
+        val db = this.readableDatabase
+        var cursor: Cursor? = null
+        try{
+            cursor = db.rawQuery(selectQuery, null)
+        }catch (e: SQLiteException) {
+            db.execSQL(selectQuery)
+            return ArrayList()
+        }
+        db.close()
+        return loadUser(cursor)
+    }
+
+    fun findCourseById(courseId: Int):List<Course>{
+        val selectQuery = "SELECT * FROM CourseTable WHERE courseId=$courseId"
+        val db = this.readableDatabase
+        var cursor: Cursor? = null
+        try{
+            cursor = db.rawQuery(selectQuery, null)
+        }catch (e: SQLiteException) {
+            db.execSQL(selectQuery)
+            return ArrayList()
+        }
+        db.close()
+        return loadCourse(cursor)
+    }
+    fun findUsersCourse(userId: Int):List<Course>{
+        val user = findUserById(userId)
+        val courseIdList:List<String> = user[0].relatedCourse.split(",");
+        val courseList:ArrayList<Course> = ArrayList<Course>()
+
+        for (i in 0 until courseIdList.size) {
+            courseList.add(findCourseById(courseIdList[i].toInt())[0])
+        }
+        return courseList
+    }
+
+    @SuppressLint("Range")
+    fun loadUser(cursor: Cursor):List<User>  {
+        val userList:ArrayList<User> = ArrayList<User>()
         var userId: Int
+        var vocation: Int
         var userName: String
+        var password: String
         var userEmail: String
+        var relatedCourse: String
+        var relatedAnswer: String
         if (cursor.moveToFirst()) {
             do {
-                userId = cursor.getInt(cursor.getColumnIndex("id"))
+                userId = cursor.getInt(cursor.getColumnIndex("userId"))
+                vocation = cursor.getInt(cursor.getColumnIndex("vocation"))
                 userName = cursor.getString(cursor.getColumnIndex("name"))
+                password = cursor.getString(cursor.getColumnIndex("name"))
                 userEmail = cursor.getString(cursor.getColumnIndex("email"))
-                val emp= EmpModelClass(userId = userId, userName = userName, userEmail = userEmail)
-                empList.add(emp)
+                relatedCourse = cursor.getString(cursor.getColumnIndex("name"))
+                relatedAnswer = cursor.getString(cursor.getColumnIndex("name"))
+                val user= User(userId = userId, vocation = vocation, userName = userName, password = password,
+                    userEmail = userEmail, relatedCourse = relatedCourse, relatedAnswer = relatedAnswer)
+                userList.add(user)
             } while (cursor.moveToNext())
         }
-        return empList
+        return userList
     }
+
+    @SuppressLint("Range")
+    fun loadCourse(cursor: Cursor):List<Course>  {
+        val courseList:ArrayList<Course> = ArrayList<Course>()
+        var courseId: Int
+        var courseName: String
+        var courseDescr: String
+        var relatedActivity: String
+        if (cursor.moveToFirst()) {
+            do {
+                courseId = cursor.getInt(cursor.getColumnIndex("courseId"))
+                courseName = cursor.getString(cursor.getColumnIndex("courseName"))
+                courseDescr = cursor.getString(cursor.getColumnIndex("courseDescr"))
+                relatedActivity = cursor.getString(cursor.getColumnIndex("relatedActivity"))
+                val course= Course(courseId = courseId, courseName = courseName,
+                    courseDescr = courseDescr, relatedActivity = relatedActivity)
+                courseList.add(course)
+            } while (cursor.moveToNext())
+        }
+        return courseList
+    }
+
+    @SuppressLint("Range")
+    fun loadActivity(cursor: Cursor):List<Activity>  {
+        val activityList:ArrayList<Activity> = ArrayList<Activity>()
+        var activityId: Int
+        var activityName: String
+        var containedQuestion: String
+        var availableTill: String
+        if (cursor.moveToFirst()) {
+            do {
+                activityId = cursor.getInt(cursor.getColumnIndex("activityId"))
+                activityName = cursor.getString(cursor.getColumnIndex("activityName"))
+                containedQuestion = cursor.getString(cursor.getColumnIndex("containedQuestion"))
+                availableTill = cursor.getString(cursor.getColumnIndex("availableTill"))
+                val activity= Activity(activityId = activityId, activityName = activityName,
+                    containedQuestion = containedQuestion, availableTill = availableTill)
+                activityList.add(activity)
+            } while (cursor.moveToNext())
+        }
+        return activityList
+    }
+
+    @SuppressLint("Range")
+    fun loadQuestion(cursor: Cursor):List<Question>  {
+        val questionList:ArrayList<Question> = ArrayList<Question>()
+        var questionId: Int
+        var questionText: String
+        var correctAnswer: String
+        if (cursor.moveToFirst()) {
+            do {
+                questionId = cursor.getInt(cursor.getColumnIndex("questionId"))
+                questionText = cursor.getString(cursor.getColumnIndex("questionText"))
+                correctAnswer = cursor.getString(cursor.getColumnIndex("correctAnswer"))
+                val question= Question(questionId = questionId, questionText = questionText, correctAnswer = correctAnswer)
+                questionList.add(question)
+            } while (cursor.moveToNext())
+        }
+        return questionList
+    }
+
+    @SuppressLint("Range")
+    fun loadAnswer(cursor: Cursor):List<Answer>  {
+        val answerList:ArrayList<Answer> = ArrayList<Answer>()
+        var answerId: Int
+        var relatedQuestionId: Int
+        var answerText: String
+        var isCorrect: Int
+        if (cursor.moveToFirst()) {
+            do {
+                answerId = cursor.getInt(cursor.getColumnIndex("answerId"))
+                relatedQuestionId = cursor.getInt(cursor.getColumnIndex("relatedQuestionId"))
+                answerText = cursor.getString(cursor.getColumnIndex("answerText"))
+                isCorrect = cursor.getInt(cursor.getColumnIndex("isCorrect"))
+                val answer= Answer(answerId = answerId, relatedQuestionId = relatedQuestionId,
+                    answerText = answerText, isCorrect = isCorrect)
+                answerList.add(answer)
+            } while (cursor.moveToNext())
+        }
+        return answerList
+    }
+
+
     //method to update data
     fun updateEmployee(emp: EmpModelClass):Int{
         val db = this.writableDatabase
