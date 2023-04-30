@@ -199,15 +199,86 @@ class DatabaseHandler(context: Context): SQLiteOpenHelper(context,DATABASE_NAME,
         db.close()
         return loadCourse(cursor)
     }
+
     fun findUsersCourse(userId: Int):List<Course>{
         val user = findUserById(userId)
         val courseIdList:List<String> = user[0].relatedCourse.split(",");
         val courseList:ArrayList<Course> = ArrayList<Course>()
 
-        for (i in 0 until courseIdList.size) {
-            courseList.add(findCourseById(courseIdList[i].toInt())[0])
+        for (element in courseIdList) {
+            courseList.add(findCourseById(element.toInt())[0])
         }
         return courseList
+    }
+
+    fun findActivityById(activityId: Int):List<Activity>{
+        val selectQuery = "SELECT * FROM ActivityTable WHERE activityId=$activityId"
+        val db = this.readableDatabase
+        var cursor: Cursor? = null
+        try{
+            cursor = db.rawQuery(selectQuery, null)
+        }catch (e: SQLiteException) {
+            db.execSQL(selectQuery)
+            return ArrayList()
+        }
+        db.close()
+        return loadActivity(cursor)
+    }
+    fun findCoursesActivity(courseId: Int):List<Activity>{
+        val course = findCourseById(courseId)
+        val activityIdList:List<String> = course[0].relatedActivity.split(",");
+        val activityList:ArrayList<Activity> = ArrayList<Activity>()
+
+        for (element in activityIdList) {
+            activityList.add(findActivityById(element.toInt())[0])
+        }
+        return activityList
+    }
+
+    fun findQuestionById(quesitonId: Int):List<Question>{
+        val selectQuery = "SELECT * FROM QuestionTable WHERE questionId=$quesitonId"
+        val db = this.readableDatabase
+        var cursor: Cursor? = null
+        try{
+            cursor = db.rawQuery(selectQuery, null)
+        }catch (e: SQLiteException) {
+            db.execSQL(selectQuery)
+            return ArrayList()
+        }
+        db.close()
+        return loadQuestion(cursor)
+    }
+    fun findActivitysQuestion(activityId: Int):List<Question>{
+        val activity = findActivityById(activityId)
+        val questionIdList:List<String> = activity[0].containedQuestion.split(",");
+        val questionList:ArrayList<Question> = ArrayList<Question>()
+
+        for (element in questionIdList) {
+            questionList.add(findQuestionById(element.toInt())[0])
+        }
+        return questionList
+    }
+
+    fun findAnswerById(answerId: Int):List<Answer>{
+        val selectQuery = "SELECT * FROM AnswerTable WHERE answerId=$answerId"
+        val db = this.readableDatabase
+        var cursor: Cursor? = null
+        try{
+            cursor = db.rawQuery(selectQuery, null)
+        }catch (e: SQLiteException) {
+            db.execSQL(selectQuery)
+            return ArrayList()
+        }
+        db.close()
+        return loadAnswer(cursor)
+    }
+    fun findAnswersQuestion(answerId: Int):List<Question>{
+        val answer = findAnswerById(answerId)
+        val questionId:Int = answer[0].relatedQuestionId;
+        val questionList:ArrayList<Question> = ArrayList<Question>()
+
+        questionList.add(findQuestionById(questionId)[0])
+        return questionList
     }
 
     @SuppressLint("Range")
