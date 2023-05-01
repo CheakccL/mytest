@@ -211,6 +211,18 @@ class DatabaseHandler(context: Context): SQLiteOpenHelper(context,DATABASE_NAME,
         return courseList
     }
 
+    fun countUsersCorrectAnswer(userId: Int):Int{
+        val user = findUserById(userId)
+        val answerIdList:List<String> = user[0].relatedAnswer.split(",");
+        var count = 0
+
+        for (element in answerIdList) {
+            if (findAnswerById(element.toInt())[0].isCorrect == 1)
+                count++
+        }
+        return count
+    }
+
     fun findActivityById(activityId: Int):List<Activity>{
         val selectQuery = "SELECT * FROM ActivityTable WHERE activityId=$activityId"
         val db = this.readableDatabase
@@ -257,6 +269,12 @@ class DatabaseHandler(context: Context): SQLiteOpenHelper(context,DATABASE_NAME,
             questionList.add(findQuestionById(element.toInt())[0])
         }
         return questionList
+    }
+
+    fun countActivitysQuestion(activityId: Int):Int{
+        val activity = findActivityById(activityId)
+        val questionIdList:List<String> = activity[0].containedQuestion.split(",");
+        return questionIdList.size
     }
 
     fun findAnswerById(answerId: Int):List<Answer>{
